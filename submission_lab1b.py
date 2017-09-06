@@ -1,3 +1,18 @@
+"""
+Author: Varun R Gurnaney
+Email: varungurnaney@jhu.edu
+
+Reference: 
+1.Client sends a DB connection request to the server; 
+db_connect();
+2. Server requests the client   
+connect_credentials(username, password)
+3. Client responds with the correct/incorrect credentials  
+response_credentials('root','toor')
+4. Server sends the status (true is credentials are correct with session ID; false is the credentials are incorrect)
+connection_response(status, sessionID)
+"""
+
 from playground.network.packet import PacketType
 from playground.network.packet.fieldtypes import UINT32, STRING, BUFFER, BOOL
 
