@@ -48,6 +48,7 @@ class ClientProtocol(asyncio.Protocol):
 		self.loop = loop
 
 	def connection_made(self, transport):
+		self._deserializer = PacketType.Deserializer()	
 		self.transport = transport
 		print("Client Connected to Server ")
 		"""self.message = "db_connect()"
@@ -60,7 +61,9 @@ class ClientProtocol(asyncio.Protocol):
 		print('Data sent')
 	
 	def data_received(self, data):
-		print('Data received')
+		self._deserializer.update(data)
+		for pkt in self._deserializer.nextPackets():
+			print(pkt)
 
 	def connection_lost(self, exc):
 		print('The server closed the connection')
@@ -78,28 +81,22 @@ class ServerProtocol(asyncio.Protocol):
 		self._deserializer = PacketType.Deserializer()		
 		self.transport = transport
 			
+	def send_packet(self, packet):
+
+		print("Send Response to Client..")
+		self.transport.write(packet.__serialize__())
 
 	def data_received(self, data):
 		self._deserializer.update(data)
 		for pkt in self._deserializer.nextPackets():
 		#self.transport.write(data)
-			if(pkt.DEFINITION_IDENTIFIER=="client_db_connect()")
-			{
-				
-			}
-			if(pkt.DEFINITION_IDENTIFIER=="client_db_connect()")
-			{
-				
-			}
-
-			if(pkt.DEFINITION_IDENTIFIER=="client_db_connect()")
-			{
-				
-			}
-
-
-	def send_packet(self, packet)
-		print("Send Response to Client..")
+			if(pkt.DEFINITION_IDENTIFIER=="client_db_connect"):
+				pkt2 = Connect_Credentials()
+				pkt2.username = "Please provide username" 
+				pkt2.password = "Please provide password"
+				self.send_packet(pkt2)		
+			
+			#if(pkt.DEFINITION_IDENTIFIER=="response_credentials"):	
 		
 		
 	def connection_lost(self, exc):
@@ -128,7 +125,6 @@ def basicUnitTest():
 if __name__=="__main__":
     basicUnitTest()
 print("\n---Basic Unit Test Successful---\n")
-
 
 
 
