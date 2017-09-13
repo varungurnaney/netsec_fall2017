@@ -9,6 +9,7 @@ from playground.asyncio_lib.testing import TestLoopEx
 from playground.network.testing import MockTransportToStorageStream
 from playground.network.testing import MockTransportToProtocol
 
+
 import asyncio
 
 #Creating Class for Packet1 
@@ -56,14 +57,22 @@ class ClientProtocol(asyncio.Protocol):
 		print('Data sent')"""
 
 	def send_packet(self, packet):
-		print("Sending data")		
+		print("Client Sending data-->",packet.DEFINITION_IDENTIFIER)		
 		self.transport.write(packet.__serialize__())
-		print('Data sent')
 	
 	def data_received(self, data):
 		self._deserializer.update(data)
 		for pkt in self._deserializer.nextPackets():
-			print(pkt)
+			if(pkt.DEFINITION_IDENTIFIER=="connect_credentials"):
+				pkt = Response_Credentials()
+				pkt.DEFINITION_IDENTIFIER = "response_credentials"
+				pkt.username = "root" 
+				pkt.password = "toor"
+				self.send_packet(pkt)	
+
+			if(pkt.DEFINITION_IDENTIFIER=="connection_response" and pkt.status==True):
+				print("Success")	
+			
 
 	def connection_lost(self, exc):
 		print('The server closed the connection')
@@ -81,24 +90,31 @@ class ServerProtocol(asyncio.Protocol):
 		self._deserializer = PacketType.Deserializer()		
 		self.transport = transport
 			
-	def send_packet(self, packet):
-
-		print("Send Response to Client..")
-		self.transport.write(packet.__serialize__())
+	
 
 	def data_received(self, data):
 		self._deserializer.update(data)
 		for pkt in self._deserializer.nextPackets():
-		#self.transport.write(data)
+				
 			if(pkt.DEFINITION_IDENTIFIER=="client_db_connect"):
-				pkt2 = Connect_Credentials()
-				pkt2.username = "Please provide username" 
-				pkt2.password = "Please provide password"
-				self.send_packet(pkt2)		
+				pkt = Connect_Credentials()
+				pkt.username = "Please provide username" 
+				pkt.password = "Please provide password"
+				self.send_packet(pkt)
 			
-			#if(pkt.DEFINITION_IDENTIFIER=="response_credentials"):	
+			
+			if(pkt.DEFINITION_IDENTIFIER=="response_credentials"):	
+				if(pkt.username=="root" and pkt.password=="toor"):
+					pkt = Connection_Response()
+					pkt.status = True
+					pkt.sessionID = "ABC123"
+					self.send_packet(pkt)
 		
-		
+	def send_packet(self, packet):
+
+		print("Server to Client-->",packet.DEFINITION_IDENTIFIER )
+		self.transport.write(packet.__serialize__())
+	
 	def connection_lost(self, exc):
 		print("Echo Server Connection Lost because {}".format(exc))
 
