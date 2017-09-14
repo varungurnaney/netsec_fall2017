@@ -47,11 +47,11 @@ def server_run():
 
 	loop = asyncio.get_event_loop()
 	# Each client connection will create a new protocol instance
-	coro = playground.getConnector().create_playground_server(ServerProtocol, '20174.1.1.1', 8000)
+	coro = playground.getConnector().create_playground_server(ServerProtocol, 8000)
 	server = loop.run_until_complete(coro)
 
 	# Serve requests until Ctrl+C is pressed
-	print('Serving on {}'.format(server.sockets[0].getsockname()))
+	print('Serving......')
 	try:
 		loop.run_forever()
 	except KeyboardInterrupt:
