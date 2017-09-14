@@ -124,18 +124,15 @@ def basicUnitTest():
 	
 	loop = 	TestLoopEx()
 	asyncio.set_event_loop(TestLoopEx())
-	
-	client = ClientProtocol(loop)	
-	server = ServerProtocol()
-	
-	transportToServer = MockTransportToProtocol(server)
-	transportToClient = MockTransportToProtocol(client)
-	
-	server.connection_made(transportToClient)	
-	client.connection_made(transportToServer)		
+
+	clientProtocol = ClientProtocol(loop)
+	serverProtocol = ServerProtocol()
+	cTransport, sTransport = MockTransportToProtocol.CreateTransportPair(clientProtocol, serverProtocol)
+	clientProtocol.connection_made(cTransport)
+	serverProtocol.connection_made(sTransport)
 
 	pkt1 = DB_connect()	
-	client.send_packet(pkt1)
+	clientProtocol.send_packet(pkt1)
 	
 
 if __name__=="__main__":
