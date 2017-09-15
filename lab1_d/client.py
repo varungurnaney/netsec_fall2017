@@ -1,56 +1,70 @@
 
+from playground.network.packet import PacketType
 from protocol import *
-import asyncio
+import asyncio 
 import playground
 
-class ServerProtocol(asyncio.Protocol):
+class ClientProtocol(asyncio.Protocol):
+
+
+	def __init__(self, callback=None):
+		self.buffer = ""
+		if callback:
+			self.callback = callback
+		else:
+			self.callback = print
+		self.transport = None
+		self.deserializer = PacketType.Deserializer()
+		print("Init success")
 
 	def connection_made(self, transport):
-		print("Server Connected to Client ")
-		self._deserializer = PacketType.Deserializer()		
+		self._deserializer = PacketType.Deserializer()	
 		self.transport = transport
-		pkt = Connect_Credentials()
-		pkt.username = "Please provide username" 
-		pkt.password = "Please provide password"
-		self.send_packet(pkt)		
-	
+		print("Client Connected to Server")
+		#print(transport)
+		pkt1 = DB_connect()	
+		send_packet(pkt1)
+		
 
 	def data_received(self, data):
 		self._deserializer.update(data)
 		for pkt in self._deserializer.nextPackets():
-				
-			if(pkt.DEFINITION_IDENTIFIER=="client_db_connect"):
-				pkt = Connect_Credentials()
-				pkt.username = "Please provide username" 
-				pkt.password = "Please provide password"
-				self.send_packet(pkt)
-			
-			
-			if(pkt.DEFINITION_IDENTIFIER=="response_credentials"):	
-				if(pkt.username=="root" and pkt.password=="toor"):
-					pkt = Connection_Response()
-					pkt.status = True
-					pkt.sessionID = "ABC123"
-					self.send_packet(pkt)
-		
+			if(pkt.DEFINITION_IDENTIFIER=="connect_credentials"):
+				pkt = Response_Credentials()
+				pkt.DEFINITION_IDENTIFIER = "response_credentials"
+				pkt.username = "root" 
+				pkt.password = "toor"
+				self.send_packet(pkt)	
+
+			if(pkt.DEFINITION_IDENTIFIER=="connection_response" and pkt.status==True):
+				print("Success")	
+
 	def send_packet(self, packet):
+		print("Client Sending data-->",packet.DEFINITION_IDENTIFIER)		
+		transport.write(packet.__serialize__())
 
-		print("Server to Client-->",packet.DEFINITION_IDENTIFIER )
-		self.transport.write(packet.__serialize__())
-	
+	def buildProtocol(self):
+		print("bp success")
+		return ClientProtocol(self.callback)			
+
 	def connection_lost(self, exc):
-		print("Echo Server Connection Lost because {}".format(exc))
+		print('The server closed the connection')
+		print('Stop the event loop')
+		#self.transport=None
+		self.loop.stop()
 
 
 
-def server_run(): 
 
-	loop = asyncio.get_event_loop()
-	# Each client connection will create a new protocol instance
-	coro = playground.getConnector().create_playground_server(ServerProtocol,'8000')
-	server = loop.run_until_complete(coro)
-	print("Server Started at {}".format(server.sockets[0].gethostname()))
-	loop.run_forever()
+def client_run():
 
+	loopC = asyncio.get_event_loop()
+	control = ClientProtocol()
+	coroC = playground.getConnector().create_playground_connection(control.buildProtocol,'20174.1.1.1',101)
+	transport,protocol = loopC.run_until_complete(coroC)
+	print("Client Connected. Starting UI t:{}. p:{}".format(transport, protocol))
+	control.connection_made(protocol)
+	loopC.run_forever()
+	loopC.close()
 
-server_run()
+client_run()
