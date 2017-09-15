@@ -21,10 +21,11 @@ class ClientProtocol(asyncio.Protocol):
 		self._deserializer = PacketType.Deserializer()	
 		self.transport = transport
 		print("Client Connected to Server")
-		#print(transport)
-		pkt1 = DB_connect()	
-		send_packet(pkt1)
-		
+		print(transport)	
+		pkt1 = DB_connect()
+		print(pkt1.__serialize__())
+		self.sendpacket(pkt1)
+
 
 	def data_received(self, data):
 		self._deserializer.update(data)
@@ -39,9 +40,12 @@ class ClientProtocol(asyncio.Protocol):
 			if(pkt.DEFINITION_IDENTIFIER=="connection_response" and pkt.status==True):
 				print("Success")	
 
-	def send_packet(self, packet):
+	def sendpacket(self, packet):
 		print("Client Sending data-->",packet.DEFINITION_IDENTIFIER)		
-		transport.write(packet.__serialize__())
+		self.transport.write(packet.__serialize__())
+
+	def test(self):
+		print("Reached\n")
 
 	def buildProtocol(self):
 		print("bp success")
