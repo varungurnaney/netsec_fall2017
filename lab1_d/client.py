@@ -1,57 +1,56 @@
 
 from protocol import *
-import asyncio 
+import asyncio
 import playground
 
-class ClientProtocol(asyncio.Protocol):
-
-	def send_packet(self, packet):
-		print("Client Sending data-->",packet.DEFINITION_IDENTIFIER)		
-		self.transport.write(packet.__serialize__())
-	
-	def __init__(self,loop):
-		self.loop = loop
-		self.transport = None
+class ServerProtocol(asyncio.Protocol):
 
 	def connection_made(self, transport):
-		self._deserializer = PacketType.Deserializer()	
+		print("Server Connected to Client ")
+		self._deserializer = PacketType.Deserializer()		
 		self.transport = transport
-		print("Client Connected to Server ")
-		pkt1 = DB_connect()
-		send_packet(pkt1)
-		print("Sent")
-
+		pkt = Connect_Credentials()
+		pkt.username = "Please provide username" 
+		pkt.password = "Please provide password"
+		self.send_packet(pkt)		
 	
+
 	def data_received(self, data):
 		self._deserializer.update(data)
 		for pkt in self._deserializer.nextPackets():
-			if(pkt.DEFINITION_IDENTIFIER=="connect_credentials"):
-				pkt = Response_Credentials()
-				pkt.DEFINITION_IDENTIFIER = "response_credentials"
-				pkt.username = "root" 
-				pkt.password = "toor"
-				self.send_packet(pkt)	
-
-			if(pkt.DEFINITION_IDENTIFIER=="connection_response" and pkt.status==True):
-				print("Success")	
+				
+			if(pkt.DEFINITION_IDENTIFIER=="client_db_connect"):
+				pkt = Connect_Credentials()
+				pkt.username = "Please provide username" 
+				pkt.password = "Please provide password"
+				self.send_packet(pkt)
 			
+			
+			if(pkt.DEFINITION_IDENTIFIER=="response_credentials"):	
+				if(pkt.username=="root" and pkt.password=="toor"):
+					pkt = Connection_Response()
+					pkt.status = True
+					pkt.sessionID = "ABC123"
+					self.send_packet(pkt)
+		
+	def send_packet(self, packet):
 
+		print("Server to Client-->",packet.DEFINITION_IDENTIFIER )
+		self.transport.write(packet.__serialize__())
+	
 	def connection_lost(self, exc):
-		print('The server closed the connection')
-		print('Stop the event loop')
-		#self.transport=None
-		self.loop.stop()
+		print("Echo Server Connection Lost because {}".format(exc))
 
 
 
+def server_run(): 
 
-def client_run():
+	loop = asyncio.get_event_loop()
+	# Each client connection will create a new protocol instance
+	coro = playground.getConnector().create_playground_server(ServerProtocol,'8000')
+	server = loop.run_until_complete(coro)
+	print("Server Started at {}".format(server.sockets[0].gethostname()))
+	loop.run_forever()
 
-	loopC = asyncio.get_event_loop()
-	coroC = playground.getConnector().create_playground_connection(lambda: ClientProtocol(loopC), '20174.1.1.1', 8000)
-	loopC.run_until_complete(coroC)
 
-	loopC.run_forever()
-	loopC.close()
-
-client_run()
+server_run()
