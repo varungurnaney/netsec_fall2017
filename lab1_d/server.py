@@ -5,28 +5,35 @@ import playground
 
 class ServerProtocol(asyncio.Protocol):
 
+	def __init__(self):
+		self.deserializer = PacketType.Deserializer()
+
+			
+
 	def connection_made(self, transport):
 		print("Server Connected to Client ")
 		self._deserializer = PacketType.Deserializer()		
 		self.transport = transport
-		pkt = Connect_Credentials()
+		"""pkt = Connect_Credentials()
 		pkt.username = "Please provide username" 
 		pkt.password = "Please provide password"
-		self.send_packet(pkt)		
+		self.send_packet(pkt)	"""
 	
 
 	def data_received(self, data):
+	
 		self._deserializer.update(data)
 		for pkt in self._deserializer.nextPackets():
-				
+
 			if(pkt.DEFINITION_IDENTIFIER=="client_db_connect"):
+				
 				pkt = Connect_Credentials()
 				pkt.username = "Please provide username" 
 				pkt.password = "Please provide password"
 				self.send_packet(pkt)
 			
-			
 			if(pkt.DEFINITION_IDENTIFIER=="response_credentials"):	
+				
 				if(pkt.username=="root" and pkt.password=="toor"):
 					pkt = Connection_Response()
 					pkt.status = True
@@ -46,11 +53,11 @@ class ServerProtocol(asyncio.Protocol):
 def server_run(): 
 
 	loop = asyncio.get_event_loop()
-	# Each client connection will create a new protocol instance
-	coro = playground.getConnector().create_playground_server(ServerProtocol,'8000')
+	coro = playground.getConnector().create_playground_server(lambda: ServerProtocol(), 101)
 	server = loop.run_until_complete(coro)
-	print("Server Started at {}".format(server.sockets[0].gethostname()))
+	print("Echo Server Started at {}".format(server.sockets[0].gethostname()))
 	loop.run_forever()
+	loop.close()
 
 
 server_run()
