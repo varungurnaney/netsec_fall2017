@@ -1,0 +1,15 @@
+To run : 
+
+1. Pull at 3 files in this directory to your system (Address=20174.1.1.1,Port=101)
+2. Run server
+3. Run client
+
+Reference of my protocol -  Simple database connection
+1.Client sends a DB connection request to the server; 
+db_connect();
+2. Server requests the client   
+connect_credentials(username, password)
+3. Client responds with the correct/incorrect credentials  
+response_credentials('root','toor')
+4. Server sends the status (true is credentials are correct with session ID; false is the credentials are incorrect)
+connection_response(status, sessionID)
