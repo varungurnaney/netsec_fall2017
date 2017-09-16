@@ -15,16 +15,15 @@ class ClientProtocol(asyncio.Protocol):
 			self.callback = print
 		self.transport = None
 		self.deserializer = PacketType.Deserializer()
-		print("Init success")
+		#print("Init success")
 
 	def connection_made(self, transport):
 		self._deserializer = PacketType.Deserializer()	
 		self.transport = transport
 		print("Client Connected to Server")
-		print(transport)	
-		pkt1 = DB_connect()
-		print(pkt1.__serialize__())
-		self.sendpacket(pkt1)
+		#print(transport)
+		#print(typeof(self.transport))	
+		
 
 
 	def data_received(self, data):
@@ -35,20 +34,21 @@ class ClientProtocol(asyncio.Protocol):
 				pkt.DEFINITION_IDENTIFIER = "response_credentials"
 				pkt.username = "root" 
 				pkt.password = "toor"
-				self.send_packet(pkt)	
+				self.sendpacket(pkt)	
 
-			if(pkt.DEFINITION_IDENTIFIER=="connection_response" and pkt.status==True):
+			elif(pkt.DEFINITION_IDENTIFIER=="connection_response" and pkt.status==True):
 				print("Success")	
 
-	def sendpacket(self, packet):
-		print("Client Sending data-->",packet.DEFINITION_IDENTIFIER)		
+	def sendpacket(self,packet):
+		print("Client Sending data-->",packet.DEFINITION_IDENTIFIER)
+		#self.transport = transport		
 		self.transport.write(packet.__serialize__())
 
-	def test(self):
-		print("Reached\n")
+	def setTransport(self, transport):
+		self.transport = transport
 
 	def buildProtocol(self):
-		print("bp success")
+		#print("bp success")
 		return ClientProtocol(self.callback)			
 
 	def connection_lost(self, exc):
@@ -67,7 +67,10 @@ def client_run():
 	coroC = playground.getConnector().create_playground_connection(control.buildProtocol,'20174.1.1.1',101)
 	transport,protocol = loopC.run_until_complete(coroC)
 	print("Client Connected. Starting UI t:{}. p:{}".format(transport, protocol))
-	control.connection_made(protocol)
+	#control.connection_made(transport)
+	control.setTransport(transport)
+	pkt1 = DB_connect()
+	control.sendpacket(pkt1)
 	loopC.run_forever()
 	loopC.close()
 
